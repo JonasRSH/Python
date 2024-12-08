@@ -5,8 +5,8 @@ from fpdf import FPDF
 from dateutil import parser
 
 
-# Class that represents a single workday, including the date, start time, pause duration, return time, and end time.
-# It also calculates the value 'worked_hours', which represents the total hours worked on that day based on user input.
+# Class which represents one workday with date of this day, start, pause, return and end worktime.
+# It creates also the value 'worked_hour', wich are the hours worked on the day calculated by the users input.
 class Workday:
     def __init__(self, work_date=None, work_start=None, work_pause=None, work_return=None, work_end=None, worked_hours=None):
         self.work_date = datetime.strptime(work_date, "%d.%m.%Y") if work_date else None
@@ -16,8 +16,7 @@ class Workday:
         self.work_end = datetime.strptime(work_end, "%H:%M") if work_end else None
         self.worked_hours = worked_hours if worked_hours else None
 
-# Prompts the user for the working date, start time, pause duration, return time, and end time, 
-# and checks if the date is not in the future.
+# Prompts the user for working date, start, pause, return and end and checks if the date does not lay in the future
     def prompt_user(self):
         self.work_date = self.validate_input('Date: ')
         if self.work_date > datetime.today():
@@ -28,7 +27,7 @@ class Workday:
         self.work_end = self.validate_input('End: ')
         return self.work_date, self.work_start, self.work_pause, self.work_return, self.work_end
 
-# Validates the user's input to ensure it is in the correct date and time format.
+# Validates the users input if right date and time format
     def validate_input(self, prompt, previous_time=None):
         user_try = 0
         while user_try < 3:
@@ -43,25 +42,25 @@ class Workday:
         else:
             raise ValueError('Input must be a valid date and time format')
 
-# Calculates the hours worked in a day based on user input.
+# Calculates from user input the hours worked on a day
     def calculate_work_hours(self):
         total_hours = (self.work_pause - self.work_start) + (self.work_end - self.work_return)
         worked_hours = total_hours.total_seconds()/3600
         return(worked_hours)
 
-# Formats the output of the date and time inputs provided by the user.
+# Formats the output of the date and time input of from the user
     def __str__(self):
         return(f'Date: {datetime.strftime(self.work_date, "%d.%m.%Y")}  Start: {datetime.strftime(self.work_start, "%H:%M")}h  Pause: {datetime.strftime(self.work_pause, "%H:%M")}h  Return: {datetime.strftime(self.work_return, "%H:%M")}h  End: {datetime.strftime(self.work_end, "%H:%M")}h  Hours worked: {self.calculate_work_hours(): .2f}hours')
 
-# Formats the output for saving to a CSV file.
+# Formats the output for saving in the csv file
     def __repr__(self):
         return str({'Date': datetime.strftime(self.work_date, "%d.%m.%Y"), 'Start': datetime.strftime(self.work_start, "%H:%M"), 'Pause': datetime.strftime(self.work_pause, "%H:%M"), 'Return': datetime.strftime(self.work_return, "%H:%M"), 'End': datetime.strftime(self.work_end, "%H:%M"), 'Hours worked': str(self.calculate_work_hours())})
 
-# Creates a menu that displays the user's options within the application.
+# Creates the menu, which shows the user his option using the application
 def menu(workday):
     new_action=None
     while True:
-        new_action = input("\n--------------------------------------------- MENU ---------------------------------------------\nNew input: 'n'  |  Save data in CSV file: 's'  |  Create PDF journal: 'p'  |  Open PDF journal: 'o'  |  Quit: 'q' \n\nChoose action: ")
+        new_action = input("\n----------------------------------------- MENU -----------------------------------------\nNew input: 'n'  |  Save data in CSV file: 's'  |  Print PDF journal: 'p'  |  Open PDF journal: 'o'  |  Quit: 'q' \n\nChoose action: ")
         if new_action == 's':
             try:
                 save_csv(workday)
@@ -87,9 +86,9 @@ def menu(workday):
         else:
             print('Invalid input')
 
-# Saves the entered data from the class to a CSV file.
+# Saves the entered data from the class to a csv file
 def save_csv(workday):
-    file_path = 'project/worktime.csv'
+    file_path = 'worktime.csv'
     write_header = not os.path.exists(file_path) or os.path.getsize(file_path) == 0
     with open(file_path, 'a', newline='') as csvfile:
         fieldnames = ['Date', 'Start', 'Pause', 'Return', 'End', 'Hours worked', 'Salary']
@@ -106,8 +105,8 @@ def save_csv(workday):
     'Salary': calculate_salary(workday)
 }))
 
-# Reads the data from the CSV file.
-def read_csv(file_path='project/worktime.csv'):
+# Reads data from the csv file
+def read_csv(file_path='worktime.csv'):
     workdays_lst = []
     with open(file_path, 'r', newline='') as csvfile:
         csv_reader = csv.DictReader(csvfile, dialect='excel')
@@ -122,13 +121,13 @@ def read_csv(file_path='project/worktime.csv'):
             workdays_lst.append(workday)
     return workdays_lst
 
-# Calculates the salary based on the saved data and the calculated hours worked per day.
+# Calcualtes the salary in base of the saved data and calculated hours per day
 def calculate_salary(workday):
     salary_per_hour = 12.00
     salary = salary_per_hour * workday.calculate_work_hours()
     return f'{salary:.2f}'
 
-# Calculates the total salary based on all workdays entered by the user and saved in the CSV file.
+# Calculates the sum of all days/salaries entered the user saved in the CSV file
 def total_salary():
     workdays = read_csv()
     total_hours = sum(workday.calculate_work_hours() for workday in workdays)
@@ -136,11 +135,11 @@ def total_salary():
     total_salary = salary_per_hour * total_hours
     return f'Total salary: $ {total_salary:.2f}'
 
-# Generates a PDF report summarizing the workdays and total salary based on the data entered by the user.
+# Creates a PDF file as a journal with all days saved in the CSV and the sum of all daily salaries
 def create_pdf():
     # Reads data from the csv file
     try:
-        with open('project/worktime.csv', 'r', newline='') as csvfile:
+        with open('worktime.csv', 'r', newline='') as csvfile:
             csv_reader = csv.reader(csvfile, dialect='excel')
             pdf = FPDF(orientation='P', format='A4')
             pdf.add_page()
@@ -149,16 +148,16 @@ def create_pdf():
             pdf.ln(20)
             pdf.set_font('helvetica', '', 12)
             for row in csv_reader:
-                pdf.cell(180, 5, '   |   '.join(row), 1, 1,)
+                pdf.cell(180, 5, '    |    '.join(row), 1, 1,)
             pdf.set_font('helvetica', 'B', 12)
             pdf.cell(160, 20, total_salary(), align='C')
             pdf.output('salary.pdf', 'F')
     except FileNotFoundError:
         print('No data saved yet')
 
-# Opens the PDF file if it exists.
+# Opens the pdf file
 def open_pdf():
-    pdf_file = 'project/salary.pdf'
+    pdf_file = 'salary.pdf'
     if os.path.exists(pdf_file):
         print(f'File exists: {pdf_file}')
         os.system(f'open {pdf_file}')
@@ -166,7 +165,8 @@ def open_pdf():
         print('File not found')
 
 
-# Main function that displays a menu to guide the user in a more user-friendly manner.
+
+# Main function with a menu to guide the user more userfriendly
 def main():
     print('\nWORKTIME')
     workday = Workday()
